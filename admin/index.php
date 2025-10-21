@@ -105,7 +105,6 @@ include 'partials/header.php';
 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert"><p><?= e($error_message) ?></p></div>
 <?php endif; ?>
         
-<!-- Stats Overview -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
         <p class="text-sm text-gray-500">ยอดสมัครรวม</p>
@@ -121,7 +120,6 @@ include 'partials/header.php';
     </div>
 </div>
 
-<!-- Event Management Table -->
 <div class="bg-white p-6 rounded-xl shadow-md mb-8">
     <h2 class="text-xl font-bold mb-4">จัดการกิจกรรม (Event Management)</h2>
     <div class="overflow-x-auto">
@@ -169,6 +167,8 @@ include 'partials/header.php';
                             
                             <a href="#" onclick="showShareModal('<?= e($event['event_code']) ?>', '<?= e($event['name']) ?>')" class="text-purple-600 hover:text-purple-900" title="แชร์"><i class="fa-solid fa-share-alt"></i></a>
                             <a href="event_schedule.php?event_id=<?= e($event['id']) ?>" class="text-teal-600 hover:text-teal-900" title="กำหนดการ"><i class="fa-solid fa-clock"></i></a>
+                            
+                            <a href="event_categories.php?event_id=<?= e($event['id']) ?>" class="text-orange-600 hover:text-orange-900" title="จัดการรุ่นการแข่งขัน"><i class="fa-solid fa-sitemap"></i></a>
                             <a href="reports.php?event_id=<?= e($event['id']) ?>" class="text-blue-600 hover:text-blue-900" title="รายงาน"><i class="fa-solid fa-chart-line"></i></a>
                             <a href="registrants.php?event_id=<?= e($event['id']) ?>" class="text-indigo-600 hover:text-indigo-900" title="ผู้สมัคร"><i class="fa-solid fa-users"></i></a>
                             <a href="event_settings.php?event_id=<?= e($event['id']) ?>" class="text-gray-600 hover:text-gray-900" title="แก้ไข"><i class="fa-solid fa-cog"></i></a>
@@ -192,7 +192,6 @@ include 'partials/header.php';
     </div>
 </div>
 
-<!-- Cancelled Events Table -->
 <?php if ($is_super_admin && !empty($cancelled_events)): ?>
 <div class="bg-gray-50 p-6 rounded-xl shadow-md mt-8 border border-dashed">
     <h2 class="text-xl font-bold mb-4 text-gray-600">กิจกรรมที่ยกเลิก (Cancelled Events)</h2>
@@ -222,7 +221,6 @@ include 'partials/header.php';
 <?php endif; ?>
 
 
-<!-- Pending Verification List -->
 <div class="bg-white p-6 rounded-xl shadow-md mt-8">
     <h2 class="text-xl font-bold mb-4">รายการที่รอการตรวจสอบล่าสุด</h2>
     <div class="overflow-x-auto">
@@ -324,4 +322,3 @@ include 'partials/header.php';
 <?php
 include 'partials/footer.php';
 ?>
-

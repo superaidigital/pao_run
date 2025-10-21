@@ -18,6 +18,9 @@ $master_titles = $mysqli->query("SELECT * FROM master_titles ORDER BY id ASC")->
 $master_shirt_sizes = $mysqli->query("SELECT * FROM master_shirt_sizes ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
 $master_runner_types = $mysqli->query("SELECT * FROM master_runner_types ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
 $master_pickup_options = $mysqli->query("SELECT * FROM master_pickup_options ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
+// === ดึงข้อมูลเพศ ===
+$master_genders = $mysqli->query("SELECT * FROM master_genders ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
+// === สิ้นสุด ===
 
 // Check for session messages
 $success_message = isset($_SESSION['master_success']) ? $_SESSION['master_success'] : null; unset($_SESSION['master_success']);
@@ -41,8 +44,9 @@ include 'partials/header.php';
 <?php endif; ?>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    
+
     <?php
+    // (ฟังก์ชัน render_master_data_card เหมือนเดิม ไม่ต้องแก้)
     function render_master_data_card($title, $action_prefix, $items, $has_description = false, $has_cost = false) {
         ?>
         <div class="bg-white p-6 rounded-xl shadow-md">
@@ -52,7 +56,7 @@ include 'partials/header.php';
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded-md text-sm group">
                         <span><?= e($item['name']) ?> <?= e($item['description'] ?? '') ?> <?= $has_cost ? '('.number_format($item['cost'] ?? 0, 2).' บาท)' : '' ?></span>
                         <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button type="button" onclick='editMasterData(<?= json_encode($item, JSON_HEX_APOS | JSON_HEX_QUOT) ?>, "<?= e($action_prefix) ?>")' class="text-blue-500 hover:text-blue-700" title="แก้ไข"><i class="fa-solid fa-pencil-alt"></i></button>
+                            <button type="button" onclick='editMasterData(<?= json_encode($item, JSON_HEX_APOS | JSON_HEX_QUOT) ?>, "<?= e($action_prefix) ?>")' class="text-blue-500 hover:text-blue-700" title="แก้ไข"><i class="fa-solid fa-pencil-alt"></i></button>
                             <form action="../actions/manage_master_data.php" method="POST" onsubmit="return confirm('คุณแน่ใจหรือไม่?');" class="inline">
                                 <input type="hidden" name="action" value="delete_<?= e($action_prefix) ?>">
                                 <input type="hidden" name="id" value="<?= e($item['id']) ?>">
@@ -83,25 +87,29 @@ include 'partials/header.php';
         </div>
         <?php
     }
-    
+
     render_master_data_card('จัดการ คำนำหน้านาม', 'title', $master_titles);
+    // === เพิ่มการแสดงผล Gender ===
+    render_master_data_card('จัดการ เพศ', 'gender', $master_genders);
+    // === สิ้นสุด ===
     render_master_data_card('จัดการ ขนาดเสื้อ', 'shirt_size', $master_shirt_sizes, true);
     render_master_data_card('จัดการ ประเภทผู้สมัคร', 'runner_type', $master_runner_types);
     render_master_data_card('จัดการ การรับเสื้อ', 'pickup_option', $master_pickup_options, false, true);
     ?>
-    
+
 </div>
 
 <script>
+    // (JavaScript editMasterData, resetForm เหมือนเดิม ไม่ต้องแก้)
     function editMasterData(item, prefix) {
         const form = document.getElementById(`form-${prefix}`);
         form.querySelector('input[name="action"]').value = `update_${prefix}`;
         form.querySelector('input[name="id"]').value = item.id;
         form.querySelector('input[name="name"]').value = item.name;
-        
+
         const descriptionInput = form.querySelector('input[name="description"]');
         if (descriptionInput) descriptionInput.value = item.description || '';
-        
+
         const costInput = form.querySelector('input[name="cost"]');
         if (costInput) costInput.value = item.cost || '0.00';
 
@@ -125,4 +133,3 @@ include 'partials/header.php';
 <?php
 include 'partials/footer.php';
 ?>
-

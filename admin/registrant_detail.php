@@ -25,16 +25,20 @@ if (!isset($_GET['reg_id']) || !is_numeric($_GET['reg_id'])) {
 $reg_id = intval($_GET['reg_id']);
 
 // --- Fetch Registration Data ---
+// === เพิ่ม LEFT JOIN และ rc.name ===
 $stmt = $mysqli->prepare("
-    SELECT 
-        r.*, 
+    SELECT
+        r.*,
         e.name AS event_name,
-        d.name AS distance_name, d.price
+        d.name AS distance_name, d.price,
+        rc.name AS category_name
     FROM registrations r
     JOIN events e ON r.event_id = e.id
     JOIN distances d ON r.distance_id = d.id
+    LEFT JOIN race_categories rc ON r.race_category_id = rc.id
     WHERE r.id = ?
 ");
+// === สิ้นสุด ===
 $stmt->bind_param("i", $reg_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -85,45 +89,50 @@ include 'partials/header.php';
     <input type="hidden" name="event_id" value="<?= e($reg['event_id']) ?>">
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Left Column: Runner and Race Details -->
+
         <div class="lg:col-span-2 space-y-6">
-            <!-- Runner Info -->
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4 text-primary"><i class="fa-solid fa-user mr-2"></i>ข้อมูลส่วนตัวผู้สมัคร</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <p><strong>ชื่อ-สกุล:</strong> <?= e($reg['title'] . $reg['first_name'] . ' ' . $reg['last_name']) ?></p>
+                    <p><strong>เพศ:</strong> <?= e($reg['gender'] ?: '-') ?></p>
                     <p><strong>เลขบัตรประชาชน:</strong> <?= e($reg['thai_id']) ?></p>
+                    <p><strong>วันเกิด:</strong> <?= e($reg['birth_date'] ? date("d M Y", strtotime($reg['birth_date'])) : '-') ?></p>
                     <p><strong>อีเมล:</strong> <?= e($reg['email']) ?></p>
                     <p><strong>โทรศัพท์:</strong> <?= e($reg['phone']) ?></p>
-                    <p><strong>Line ID:</strong> <?= e($reg['line_id'] ?? '-') ?></p>
+                    <p><strong>Line ID:</strong> <?= e($reg['line_id'] ?: '-') ?></p>
                     <p><strong>โรคประจำตัว:</strong> <?= e($reg['disease']) ?></p>
                     <?php if ($reg['disease_detail']): ?>
                     <p class="md:col-span-2"><strong>รายละเอียด:</strong> <?= e($reg['disease_detail']) ?></p>
                     <?php endif; ?>
+                    <p><strong>ติดต่อฉุกเฉิน:</strong> <?= e($reg['emergency_contact_name'] ?: '-') ?></p>
+                    <p><strong>เบอร์ติดต่อฉุกเฉิน:</strong> <?= e($reg['emergency_contact_phone'] ?: '-') ?></p>
                 </div>
             </div>
 
-            <!-- Race Info -->
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4 text-primary"><i class="fa-solid fa-flag-checkered mr-2"></i>ข้อมูลการแข่งขัน</h2>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <p><strong>กิจกรรม:</strong> <?= e($reg['event_name']) ?></p>
                     <p><strong>ระยะทาง:</strong> <?= e($reg['distance_name']) ?></p>
+                    <p><strong>รุ่นการแข่งขัน:</strong> <?= e($reg['category_name'] ?: '-') ?></p>
                     <p><strong>ค่าสมัคร:</strong> <?= number_format($reg['price'], 2) ?> บาท</p>
                     <p><strong>ขนาดเสื้อ:</strong> <?= e($reg['shirt_size']) ?></p>
                  </div>
             </div>
         </div>
 
-        <!-- Right Column: Payment and Actions -->
         <div class="space-y-6">
             <div class="bg-white p-6 rounded-xl shadow-md">
                 <h2 class="text-xl font-bold mb-4 text-primary"><i class="fa-solid fa-money-check-dollar mr-2"></i>ข้อมูลการชำระเงิน</h2>
-                <a href="../<?= e($reg['payment_slip_url']) ?>" target="_blank" class="block border-2 border-dashed rounded-lg p-4 text-center hover:border-blue-500 transition">
-                    <img src="../<?= e($reg['payment_slip_url']) ?>" alt="Payment Slip" class="max-h-60 mx-auto rounded-md">
-                    <span class="mt-2 block text-sm text-blue-600 font-semibold">คลิกเพื่อดูภาพสลิปขนาดเต็ม</span>
-                </a>
+                <?php if (!empty($reg['payment_slip_url'])): ?>
+                    <a href="../<?= e($reg['payment_slip_url']) ?>" target="_blank" class="block border-2 border-dashed rounded-lg p-4 text-center hover:border-blue-500 transition">
+                        <img src="../<?= e($reg['payment_slip_url']) ?>" alt="Payment Slip" class="max-h-60 mx-auto rounded-md">
+                        <span class="mt-2 block text-sm text-blue-600 font-semibold">คลิกเพื่อดูภาพสลิปขนาดเต็ม</span>
+                    </a>
+                <?php else: ?>
+                    <p class="text-center text-gray-500">ไม่มีข้อมูลสลิป</p>
+                <?php endif; ?>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-md">
@@ -153,4 +162,3 @@ include 'partials/header.php';
 <?php
 include 'partials/footer.php';
 ?>
-
