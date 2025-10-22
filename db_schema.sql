@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 21, 2025 at 09:32 AM
+-- Generation Time: Oct 22, 2025 at 09:19 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.1.25
 
@@ -87,6 +87,11 @@ CREATE TABLE `events` (
   `map_direction_url` text DEFAULT NULL,
   `description` text DEFAULT NULL,
   `awards_description` text DEFAULT NULL,
+  `bib_prefix` varchar(20) DEFAULT NULL COMMENT 'คำนำหน้า BIB',
+  `bib_start_number` int(11) NOT NULL DEFAULT 1 COMMENT 'เลข BIB เริ่มต้น',
+  `bib_padding` int(11) NOT NULL DEFAULT 4 COMMENT 'จำนวนหลักของเลข BIB',
+  `bib_next_number` int(11) DEFAULT NULL COMMENT 'เลข BIB ลำดับถัดไปที่จะใช้',
+  `corral_settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'การตั้งค่ากลุ่มปล่อยตัว' CHECK (json_valid(`corral_settings`)),
   `bib_background_url` text DEFAULT NULL COMMENT 'Path to custom BIB background image'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -94,9 +99,9 @@ CREATE TABLE `events` (
 -- Dumping data for table `events`
 --
 
-INSERT INTO `events` (`id`, `event_code`, `name`, `slogan`, `theme_color`, `color_code`, `logo_text`, `is_visible`, `is_cancelled`, `sort_order`, `is_registration_open`, `organizer`, `organizer_phone`, `organizer_email`, `organizer_line_id`, `organizer_logo_url`, `contact_person_name`, `contact_person_phone`, `payment_bank`, `payment_account_name`, `payment_account_number`, `payment_qr_code_url`, `start_date`, `cover_image_url`, `card_thumbnail_url`, `map_embed_url`, `map_direction_url`, `description`, `awards_description`, `bib_background_url`) VALUES
-(1, 'sskpa-run-25', 'kokphet Run For Love 2024', 'วิ่งสร้างสรรค์, เพื่อชุมชนยั่งยืน', 'indigo', '#4f46e5', 'SSKPAO RUN 🏃‍♀️', 1, 0, 1, 1, 'รพสต.โคกเพชร', '045-888-999', 'ssk-pao@run.com', '@sskpaorun', 'uploads/sskpa-run-25/organizer/organizer_68f729c73fa4d.png', 'คุณสมหญิง ใจดี (ฝ่ายทะเบียน)', '087-9617951', 'ธนาคาร SISAKET RUN', 'SISAKET PAO RUN', '123-456-7890', 'uploads/sskpa-run-25/payment/payment_68f50c3e0b33a.jpg', '2025-11-15 18:00:00', 'uploads/sskpa-run-25/cover/cover_68f5d4c9412f0.webp', 'uploads/sskpa-run-25/cover/cover_68f5d4c9416ae.webp', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.375005898851!2d104.3005556!3d15.1111111!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311a2f5f5c5b4e3d%3A0x8c5b1b4b1a4a4b1c!2sSisaket%20Provincial%20Stadium!5e0!3m2!1sen!2sth!4v1678888888888!5m2!1sen!2sth', 'https://maps.google.com/?q=Sisaket+Provincial+Stadium', '<p><em><strong>Fancy รวมทุกรุ่น 6 รางวัลๆละ 500 พร้อมเกียรติบัตร</strong></em></p>\r\n\r\n<p><strong>รางวัล 1000-600-400</strong></p>\r\n\r\n<p><strong>สมัครวิ่งได้เหรียญทุกคน -ชนะเลิศ 1-2-3 เกียรติบัตร</strong></p>\r\n', '<p>Fancy รวมทุกรุ่น 6 รางวัลๆละ 500 พร้อมเกียรติบัตร</p>\r\n\r\n<p><strong>รางวัล 1000-600-400</strong></p>\r\n\r\n<p><strong>สมัครวิ่งได้เหรียญทุกคน -ชนะเลิศ 1-2-3 เกียรติบัตร</strong></p>\r\n', NULL),
-(2, 'mountain-trail-challenge-25', 'Mountain Trail Challenge 2025', 'พิชิตยอดเขา.. ท้าทายขีดจำกัด!', 'green', '#10b981', 'TRAIL CHALLENGE ⛰️', 1, 0, 2, 0, 'Thai Trail Runners Club', '090-555-4444', 'trail@run.com', '@thaitrail', NULL, 'คุณอดิศักดิ์ แข็งแรง (Race Director)', '090-111-2222', 'ธนาคาร TRAIL RUN', 'TRAIL RUNNING TEAM', '987-654-3210', 'https://placehold.co/300x300/10b981/ffffff?text=TRAIL+QR+Code', '2025-08-15 06:00:00', 'https://placehold.co/800x300/10b981/ffffff?text=Mountain+Trail+Cover', 'https://placehold.co/400x150/10b981/ffffff?text=Mountain+Trail+Card', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.375005898851!2d101.4000000!3d14.4000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311a2f5f5c5b4e3d%3A0x8c5b1b4b1a4a4b1c!2sKhao%20Yai%20National%20Park!5e0!3m2!1sen!2sth!4v1678888888888!5m2!1sen!2sth', 'https://maps.google.com/?q=Khao+Yai+National+Park', 'การแข่งขันวิ่งเทรลสุดท้าทายในพื้นที่เขาใหญ่', '**รางวัลสำหรับ 25 KM (Ultra Trail):**\r\n\r\n- Overall Male/Female (Top 5): **ถ้วยรางวัล King/Queen of the Mountain**', NULL);
+INSERT INTO `events` (`id`, `event_code`, `name`, `slogan`, `theme_color`, `color_code`, `logo_text`, `is_visible`, `is_cancelled`, `sort_order`, `is_registration_open`, `organizer`, `organizer_phone`, `organizer_email`, `organizer_line_id`, `organizer_logo_url`, `contact_person_name`, `contact_person_phone`, `payment_bank`, `payment_account_name`, `payment_account_number`, `payment_qr_code_url`, `start_date`, `cover_image_url`, `card_thumbnail_url`, `map_embed_url`, `map_direction_url`, `description`, `awards_description`, `bib_prefix`, `bib_start_number`, `bib_padding`, `bib_next_number`, `corral_settings`, `bib_background_url`) VALUES
+(1, 'sskpa-run-25', 'kokphet Run For Love 2024', 'วิ่งสร้างสรรค์, เพื่อชุมชนยั่งยืน', 'indigo', '#4f46e5', 'SSKPAO RUN 🏃‍♀️', 1, 0, 1, 1, 'รพสต.โคกเพชร', '045-888-999', 'ssk-pao@run.com', '@sskpaorun', 'uploads/sskpa-run-25/organizer/organizer_68f729c73fa4d.png', 'คุณสมหญิง ใจดี (ฝ่ายทะเบียน)', '087-9617951', 'ธนาคาร SISAKET RUN', 'SISAKET PAO RUN', '123-456-7890', 'uploads/sskpa-run-25/payment/payment_68f50c3e0b33a.jpg', '2025-11-15 18:00:00', 'uploads/sskpa-run-25/cover/cover_68f5d4c9412f0.webp', 'uploads/sskpa-run-25/cover/cover_68f5d4c9416ae.webp', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.375005898851!2d104.3005556!3d15.1111111!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311a2f5f5c5b4e3d%3A0x8c5b1b4b1a4a4b1c!2sSisaket%20Provincial%20Stadium!5e0!3m2!1sen!2sth!4v1678888888888!5m2!1sen!2sth', 'https://maps.google.com/?q=Sisaket+Provincial+Stadium', '<p><em><strong>Fancy รวมทุกรุ่น 6 รางวัลๆละ 500 พร้อมเกียรติบัตร</strong></em></p>\r\n\r\n<p><strong>รางวัล 1000-600-400</strong></p>\r\n\r\n<p><strong>สมัครวิ่งได้เหรียญทุกคน -ชนะเลิศ 1-2-3 เกียรติบัตร</strong></p>\r\n', '<p>Fancy รวมทุกรุ่น 6 รางวัลๆละ 500 พร้อมเกียรติบัตร</p>\r\n\r\n<p><strong>รางวัล 1000-600-400</strong></p>\r\n\r\n<p><strong>สมัครวิ่งได้เหรียญทุกคน -ชนะเลิศ 1-2-3 เกียรติบัตร</strong></p>\r\n', NULL, 1, 4, 4, NULL, NULL),
+(2, 'mountain-trail-challenge-25', 'Mountain Trail Challenge 2025', 'พิชิตยอดเขา.. ท้าทายขีดจำกัด!', 'green', '#10b981', 'TRAIL CHALLENGE ⛰️', 1, 0, 2, 0, 'Thai Trail Runners Club', '090-555-4444', 'trail@run.com', '@thaitrail', NULL, 'คุณอดิศักดิ์ แข็งแรง (Race Director)', '090-111-2222', 'ธนาคาร TRAIL RUN', 'TRAIL RUNNING TEAM', '987-654-3210', 'https://placehold.co/300x300/10b981/ffffff?text=TRAIL+QR+Code', '2025-08-15 06:00:00', 'https://placehold.co/800x300/10b981/ffffff?text=Mountain+Trail+Cover', 'https://placehold.co/400x150/10b981/ffffff?text=Mountain+Trail+Card', 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.375005898851!2d101.4000000!3d14.4000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311a2f5f5c5b4e3d%3A0x8c5b1b4b1a4a4b1c!2sKhao%20Yai%20National%20Park!5e0!3m2!1sen!2sth!4v1678888888888!5m2!1sen!2sth', 'https://maps.google.com/?q=Khao+Yai+National+Park', 'การแข่งขันวิ่งเทรลสุดท้าทายในพื้นที่เขาใหญ่', '**รางวัลสำหรับ 25 KM (Ultra Trail):**\r\n\r\n- Overall Male/Female (Top 5): **ถ้วยรางวัล King/Queen of the Mountain**', NULL, 1, 4, 1, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -248,7 +253,8 @@ CREATE TABLE `master_titles` (
 INSERT INTO `master_titles` (`id`, `name`) VALUES
 (2, 'นาง'),
 (3, 'นางสาว'),
-(1, 'นาย');
+(1, 'นาย'),
+(4, 'อื่นๆ');
 
 -- --------------------------------------------------------
 
@@ -266,15 +272,6 @@ CREATE TABLE `race_categories` (
   `maxAge` int(11) NOT NULL DEFAULT 99
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `race_categories`
---
-
-INSERT INTO `race_categories` (`id`, `event_id`, `distance`, `name`, `gender`, `minAge`, `maxAge`) VALUES
-(1, 1, '10 KM', '18-29 ปี', 'ชาย', 18, 29),
-(2, 1, '5 KM', '18-29 ปี', 'ชาย', 18, 29),
-(3, 1, '10 KM', 'ผู้ดูแลระบบ', 'ชาย', 1, 99);
-
 -- --------------------------------------------------------
 
 --
@@ -289,6 +286,7 @@ CREATE TABLE `registrations` (
   `distance_id` int(11) NOT NULL,
   `race_category_id` int(11) DEFAULT NULL,
   `bib_number` varchar(20) DEFAULT NULL,
+  `corral` varchar(10) DEFAULT NULL COMMENT 'กลุ่มปล่อยตัวที่นักวิ่งถูกจัดให้อยู่',
   `shirt_size` varchar(10) NOT NULL,
   `status` enum('รอชำระเงิน','รอตรวจสอบ','ชำระเงินแล้ว') NOT NULL DEFAULT 'รอชำระเงิน',
   `payment_slip_url` text DEFAULT NULL,
@@ -312,8 +310,8 @@ CREATE TABLE `registrations` (
 -- Dumping data for table `registrations`
 --
 
-INSERT INTO `registrations` (`id`, `registration_code`, `user_id`, `event_id`, `distance_id`, `race_category_id`, `bib_number`, `shirt_size`, `status`, `payment_slip_url`, `registered_at`, `title`, `first_name`, `last_name`, `gender`, `email`, `phone`, `line_id`, `thai_id`, `birth_date`, `disease`, `disease_detail`, `emergency_contact_name`, `emergency_contact_phone`) VALUES
-(8, 'RUN2025-13D944', NULL, 1, 40, NULL, NULL, '0', 'รอตรวจสอบ', 'uploads/slip_1761029159_f73a752f267d7acd.png', '2025-10-21 06:45:59', 'นาย', 'ปฐวีกานต์', 'ศรีคราม', 'ชาย', 'nurse@mail.com', '0981051534', NULL, '1332000000946', '2025-10-21', 'ไม่มีโรคประจำตัว', NULL, 'ปฐวีกานต์', '0981051534');
+INSERT INTO `registrations` (`id`, `registration_code`, `user_id`, `event_id`, `distance_id`, `race_category_id`, `bib_number`, `corral`, `shirt_size`, `status`, `payment_slip_url`, `registered_at`, `title`, `first_name`, `last_name`, `gender`, `email`, `phone`, `line_id`, `thai_id`, `birth_date`, `disease`, `disease_detail`, `emergency_contact_name`, `emergency_contact_phone`) VALUES
+(11, 'RUN2025-45A7FB', NULL, 1, 40, NULL, '0003', NULL, 'XL', 'ชำระเงินแล้ว', 'uploads/slip_1761045456_82b1fdae878124d5.jpg', '2025-10-21 11:17:36', 'นาย', 'ปฐวีกานต์', 'ศรีคราม', 'ชาย', 'adminmax@gmail.com', '0981051534', NULL, '1332000000946', '1994-12-07', 'ไม่มีโรคประจำตัว', NULL, 'ปฐวีกานต์', '0981051534');
 
 -- --------------------------------------------------------
 
@@ -627,19 +625,19 @@ ALTER TABLE `master_shirt_sizes`
 -- AUTO_INCREMENT for table `master_titles`
 --
 ALTER TABLE `master_titles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `race_categories`
 --
 ALTER TABLE `race_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `registrations`
 --
 ALTER TABLE `registrations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `registration_data`

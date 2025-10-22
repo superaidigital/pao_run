@@ -1,8 +1,7 @@
 <?php
-// admin/event_settings.php - หน้าตั้งค่ากิจกรรม (เวอร์ชันสมบูรณ์ + BIB Settings)
+// admin/event_settings.php - หน้าตั้งค่ากิจกรรม (ฉบับสมบูรณ์)
 
 // --- CORE BOOTSTRAP ---
-// This now happens in the header, but we need the data before including it.
 require_once '../config.php';
 require_once '../functions.php';
 
@@ -47,6 +46,8 @@ $stmt->close();
 
 $distances = $mysqli->query("SELECT * FROM distances WHERE event_id = $event_id ORDER BY id ASC")->fetch_all(MYSQLI_ASSOC);
 $images_result = $mysqli->query("SELECT id, image_url, image_type FROM event_images WHERE event_id = $event_id")->fetch_all(MYSQLI_ASSOC);
+$corral_settings = isset($event['corral_settings']) ? json_decode($event['corral_settings'], true) : [];
+
 
 function filter_images_by_type($images, $type) {
     return array_filter($images, function($img) use ($type) { return $img['image_type'] == $type; });
@@ -312,6 +313,18 @@ include 'partials/header.php';
         </div>
          <p class="text-xs text-gray-500 mt-2">เลข BIB ปัจจุบันที่จะใช้ถัดไป: <strong class="font-mono"><?= e($event['bib_next_number'] ?? ($event['bib_start_number'] ?? '(ตั้งค่าเลขเริ่มต้นก่อน)')) ?></strong> (ระบบจะอัปเดตอัตโนมัติเมื่อมีการกำหนด BIB)</p>
     </div>
+
+    <div>
+        <h2 class="text-xl font-bold text-primary border-b pb-2 mb-4">10. จัดการกลุ่มปล่อยตัว (Corral/Wave)</h2>
+        <p class="text-sm text-gray-600 mb-4">กำหนดกลุ่มปล่อยตัวเพื่อจัดระเบียบนักวิ่งในวันงาน สามารถกำหนดสีและเวลาปล่อยตัวได้</p>
+        <div id="corrals-container" class="space-y-3">
+            <!-- Corrals will be rendered here by JS -->
+        </div>
+        <button type="button" onclick="addCorralRow()" class="mt-3 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-sm">
+            <i class="fa-solid fa-plus-circle mr-2"></i> เพิ่มกลุ่มปล่อยตัว
+        </button>
+    </div>
+
     <div class="flex justify-end pt-6 border-t">
         <button type="submit" class="w-full md:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
             <i class="fa-solid fa-save mr-2"></i> บันทึกข้อมูลทั้งหมด
@@ -342,7 +355,6 @@ include 'partials/header.php';
         distances.forEach((dist, index) => {
             const row = document.createElement('div');
             row.className = 'flex items-center gap-2 p-2 border rounded-lg bg-gray-50 distance-row';
-            // Use unique IDs for inputs if needed later, otherwise name is usually sufficient
             row.innerHTML = `
                 <input type="hidden" name="distances[${index}][id]" value="${dist.id || ''}">
                 <input type="text" name="distances[${index}][name]" placeholder="ชื่อระยะทาง *" value="${dist.name || ''}" required class="w-1/3 p-2 border rounded-md text-sm">
@@ -355,10 +367,9 @@ include 'partials/header.php';
     }
 
     function addDistanceRow() {
-        // Find next index based on current number of rows to avoid duplicate indices after deletion
         const nextIndex = distancesContainer.querySelectorAll('.distance-row').length;
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 p-2 border rounded-lg bg-gray-50 distance-row animate-fade-in'; // Add animation class
+        row.className = 'flex items-center gap-2 p-2 border rounded-lg bg-gray-50 distance-row animate-fade-in';
         row.innerHTML = `
             <input type="hidden" name="distances[${nextIndex}][id]" value="">
             <input type="text" name="distances[${nextIndex}][name]" placeholder="ชื่อระยะทาง *" value="" required class="w-1/3 p-2 border rounded-md text-sm">
@@ -366,33 +377,81 @@ include 'partials/header.php';
             <input type="number" step="0.01" name="distances[${nextIndex}][price]" placeholder="ราคา *" value="" required min="0" class="w-1/4 p-2 border rounded-md text-sm">
             <button type="button" onclick="removeDistanceRow(this)" title="ลบระยะทางนี้" class="bg-red-100 text-red-600 hover:bg-red-200 p-2 rounded-md h-9 w-9 flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
         `;
-        // Remove the placeholder text if it exists
          const placeholder = distancesContainer.querySelector('p');
          if(placeholder) placeholder.remove();
-
         distancesContainer.appendChild(row);
     }
 
     function removeDistanceRow(button) {
         const row = button.closest('.distance-row');
         if (row) {
-             row.classList.add('animate-fade-out'); // Add fade-out animation
-             // Remove the element after animation completes
+             row.classList.add('animate-fade-out');
              setTimeout(() => {
                  row.remove();
-                 // Re-render might be needed if indices are critical, but for simple submission,
-                 // PHP handles gaps fine. Check if placeholder needs to be added back.
                  if (distancesContainer.querySelectorAll('.distance-row').length === 0) {
                      distancesContainer.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีรายการระยะทาง คลิกปุ่มด้านล่างเพื่อเพิ่ม</p>';
                  }
-             }, 300); // Match animation duration
+             }, 300);
+        }
+    }
+
+    // --- CORRAL MANAGEMENT SCRIPT ---
+    let corrals = <?= json_encode($corral_settings ?? [], JSON_UNESCAPED_UNICODE) ?>;
+    const corralsContainer = document.getElementById('corrals-container');
+
+    function renderCorrals() {
+        if (!corralsContainer) return;
+        corralsContainer.innerHTML = '';
+        if (corrals.length === 0) {
+            corralsContainer.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีกลุ่มปล่อยตัว คลิกปุ่มด้านล่างเพื่อเพิ่ม</p>';
+        }
+        corrals.forEach((corral, index) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 p-2 border rounded-lg bg-gray-50 corral-row';
+            row.innerHTML = `
+                <input type="text" name="corrals[${index}][name]" placeholder="ชื่อกลุ่ม (เช่น A, B)" value="${corral.name || ''}" required class="w-1/4 p-2 border rounded-md text-sm font-bold">
+                <input type="color" name="corrals[${index}][color]" value="${corral.color || '#3b82f6'}" class="h-9 w-12 p-1 border rounded-md" title="สีประจำกลุ่ม">
+                <input type="time" name="corrals[${index}][time]" value="${corral.time || ''}" class="p-2 border rounded-md text-sm" title="เวลาปล่อยตัว">
+                <input type="text" name="corrals[${index}][description]" placeholder="คำอธิบาย (เช่น สำหรับนักวิ่ง Elite)" value="${corral.description || ''}" class="flex-grow p-2 border rounded-md text-sm">
+                <button type="button" onclick="removeCorralRow(this)" title="ลบกลุ่มนี้" class="bg-red-100 text-red-600 hover:bg-red-200 p-2 rounded-md h-9 w-9 flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+            `;
+            corralsContainer.appendChild(row);
+        });
+    }
+
+    function addCorralRow() {
+        const nextIndex = corralsContainer.querySelectorAll('.corral-row').length;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 border rounded-lg bg-gray-50 corral-row animate-fade-in';
+        row.innerHTML = `
+            <input type="text" name="corrals[${nextIndex}][name]" placeholder="ชื่อกลุ่ม (เช่น A, B)" value="" required class="w-1/4 p-2 border rounded-md text-sm font-bold">
+            <input type="color" name="corrals[${nextIndex}][color]" value="#3b82f6" class="h-9 w-12 p-1 border rounded-md" title="สีประจำกลุ่ม">
+            <input type="time" name="corrals[${nextIndex}][time]" value="" class="p-2 border rounded-md text-sm" title="เวลาปล่อยตัว">
+            <input type="text" name="corrals[${nextIndex}][description]" placeholder="คำอธิบาย (เช่น สำหรับนักวิ่ง Elite)" value="" class="flex-grow p-2 border rounded-md text-sm">
+            <button type="button" onclick="removeCorralRow(this)" title="ลบกลุ่มนี้" class="bg-red-100 text-red-600 hover:bg-red-200 p-2 rounded-md h-9 w-9 flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+        `;
+        const placeholder = corralsContainer.querySelector('p');
+        if (placeholder) placeholder.remove();
+        corralsContainer.appendChild(row);
+    }
+
+    function removeCorralRow(button) {
+        const row = button.closest('.corral-row');
+        if (row) {
+            row.classList.add('animate-fade-out');
+            setTimeout(() => {
+                row.remove();
+                if (corralsContainer.querySelectorAll('.corral-row').length === 0) {
+                    corralsContainer.innerHTML = '<p class="text-sm text-gray-500">ยังไม่มีกลุ่มปล่อยตัว คลิกปุ่มด้านล่างเพื่อเพิ่ม</p>';
+                }
+            }, 300);
         }
     }
 
     // --- INITIAL RENDER ---
     document.addEventListener('DOMContentLoaded', () => {
         renderDistances();
-        // Add simple fade-in/out CSS if needed
+        renderCorrals();
         const style = document.createElement('style');
         style.textContent = `
             @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -408,3 +467,4 @@ include 'partials/header.php';
 <?php
 include 'partials/footer.php';
 ?>
+

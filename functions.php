@@ -102,6 +102,32 @@ function validateThaiID($id) {
 }
 
 /**
+ * [NEW] ฟังก์ชันสำหรับสร้างและเก็บ CSRF token ใน session
+ * @return string CSRF token
+ */
+function generate_csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * [NEW] ฟังก์ชันสำหรับตรวจสอบ CSRF token ที่ส่งมาจากฟอร์ม
+ * @return void จะหยุดการทำงาน (die) หาก token ไม่ถูกต้อง
+ */
+function validate_csrf_token() {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        // Token ไม่ตรงกันหรือไม่มีอยู่: อาจเป็นการโจมตี CSRF
+        unset($_SESSION['csrf_token']); // ล้าง token ทิ้งเพื่อความปลอดภัย
+        die('Invalid CSRF token.');
+    }
+    // เมื่อตรวจสอบผ่านแล้ว ให้ล้าง token ทิ้ง เพื่อบังคับให้ฟอร์มถัดไปสร้างใหม่
+    unset($_SESSION['csrf_token']);
+}
+
+
+/**
  * NEW: ฟังก์ชันสำหรับแปลงวันที่เป็นรูปแบบไทย (วัน เดือน ปี พ.ศ.)
  * @param string $dateStr วันที่ในรูปแบบ YYYY-MM-DD
  * @return string|null วันที่ในรูปแบบไทย หรือ null ถ้าข้อมูลเข้าไม่ถูกต้อง

@@ -33,7 +33,7 @@ $params = [];
 $types = '';
 
 if (!empty($search_term)) {
-    $where_clause = " WHERE username LIKE ? OR full_name LIKE ?";
+    $where_clause = " WHERE s.username LIKE ? OR s.full_name LIKE ?";
     $like_term = "%{$search_term}%";
     $params[] = $like_term;
     $params[] = $like_term;
@@ -41,7 +41,7 @@ if (!empty($search_term)) {
 }
 
 // 1. Count total records for pagination
-$count_stmt = $mysqli->prepare("SELECT COUNT(*) FROM staff" . $where_clause);
+$count_stmt = $mysqli->prepare("SELECT COUNT(*) FROM staff s" . $where_clause);
 if (!empty($params)) {
     $count_stmt->bind_param($types, ...$params);
 }
@@ -51,7 +51,10 @@ $total_pages = ceil($total_records / $limit);
 $count_stmt->close();
 
 // 2. Fetch staff accounts for the current page
-$staff_query = "SELECT * FROM staff" . $where_clause . " ORDER BY role, username LIMIT ? OFFSET ?";
+$staff_query = "SELECT s.*, e.name as event_name 
+                FROM staff s 
+                LEFT JOIN events e ON s.assigned_event_id = e.id " 
+               . $where_clause . " ORDER BY s.role, s.username LIMIT ? OFFSET ?";
 $params[] = $limit;
 $params[] = $offset;
 $types .= 'ii';
@@ -62,16 +65,13 @@ $staff_stmt->execute();
 $all_staff = $staff_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $staff_stmt->close();
 
-
 // 3. All Events (for assignment dropdown)
-$all_events = $mysqli->query("SELECT id, name FROM events ORDER BY name")->fetch_all(MYSQLI_ASSOC);
+$all_events = $mysqli->query("SELECT id, name FROM events ORDER BY name ASC")->fetch_all(MYSQLI_ASSOC);
 
 // Check for session messages
 $success_message = isset($_SESSION['update_success']) ? $_SESSION['update_success'] : null; unset($_SESSION['update_success']);
 $error_message = isset($_SESSION['update_error']) ? $_SESSION['update_error'] : null; unset($_SESSION['update_error']);
 
-
-// --- RENDER VIEW ---
 include 'partials/header.php';
 ?>
 
@@ -88,7 +88,6 @@ include 'partials/header.php';
 <?php if ($error_message): ?>
 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert"><p><?= e($error_message) ?></p></div>
 <?php endif; ?>
-
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Left: Staff List -->
@@ -121,20 +120,7 @@ include 'partials/header.php';
                             <td class="px-3 py-4 text-sm"><?= e($staff_member['full_name']) ?></td>
                             <td class="px-3 py-4 text-sm font-semibold <?= $staff_member['role'] == 'admin' ? 'text-red-600' : 'text-gray-700' ?>"><?= ucfirst($staff_member['role']) ?></td>
                             <td class="px-3 py-4 text-sm text-gray-500">
-                                <?php
-                                    if ($staff_member['assigned_event_id']) {
-                                        $assigned_event_name = 'N/A';
-                                        foreach ($all_events as $event) {
-                                            if ($event['id'] == $staff_member['assigned_event_id']) {
-                                                $assigned_event_name = $event['name'];
-                                                break;
-                                            }
-                                        }
-                                        echo e($assigned_event_name);
-                                    } else {
-                                        echo '-';
-                                    }
-                                ?>
+                                <?= e($staff_member['event_name'] ?? '-') ?>
                             </td>
                             <td class="px-3 py-4 text-right">
                                  <div class="flex items-center justify-end space-x-4">
@@ -253,7 +239,6 @@ include 'partials/header.php';
         passwordHelper.textContent = 'กรอกรหัสผ่านใหม่เพื่อทำการเปลี่ยนแปลง';
 
         roleInput.value = staffData.role;
-        // Prevent user from changing their own role to staff
         if (staffData.id == currentStaffId) {
             roleInput.disabled = true;
             roleInput.classList.add('bg-gray-100', 'cursor-not-allowed');
@@ -267,13 +252,12 @@ include 'partials/header.php';
         submitBtn.innerHTML = '<i class="fa-solid fa-save mr-2"></i> บันทึกการเปลี่ยนแปลง';
         cancelBtn.classList.remove('hidden');
 
-        // Scroll to the form for better UX on mobile
         document.getElementById('form-container').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetForm() {
         formTitle.textContent = 'เพิ่มบัญชีใหม่';
-        staffForm.reset(); // Resets all form fields to their initial state
+        staffForm.reset();
         
         formAction.value = 'create';
         staffIdInput.value = '';
@@ -293,8 +277,6 @@ include 'partials/header.php';
     }
 </script>
 
-
 <?php
 include 'partials/footer.php';
 ?>
-

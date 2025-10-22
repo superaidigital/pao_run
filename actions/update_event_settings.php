@@ -1,6 +1,6 @@
 <?php
 // actions/update_event_settings.php
-// สคริปต์สำหรับอัปเดตการตั้งค่ากิจกรรม (เวอร์ชันสมบูรณ์)
+// สคริปต์สำหรับอัปเดตการตั้งค่ากิจกรรม (เวอร์ชันสมบูรณ์ + BIB + Corrals)
 
 require_once '../config.php';
 require_once '../functions.php';
@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $payment_account_name = isset($_POST['payment_account_name']) ? e($_POST['payment_account_name']) : '';
     $payment_account_number = isset($_POST['payment_account_number']) ? e($_POST['payment_account_number']) : '';
 
-    // Content (from CKEditor, allow HTML)
+    // Content
     $description = isset($_POST['description']) ? $_POST['description'] : null;
     $awards_description = isset($_POST['awards_description']) ? $_POST['awards_description'] : null;
     
@@ -48,6 +48,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Relational & File Data
     $posted_distances = isset($_POST['distances']) ? $_POST['distances'] : [];
     $images_to_delete = isset($_POST['delete_images']) ? $_POST['delete_images'] : [];
+    
+    // [NEW] BIB Settings
+    $bib_prefix = isset($_POST['bib_prefix']) ? e(trim($_POST['bib_prefix'])) : null;
+    $bib_start_number = isset($_POST['bib_start_number']) ? intval($_POST['bib_start_number']) : 1;
+    $bib_padding = isset($_POST['bib_padding']) ? intval($_POST['bib_padding']) : 4;
+
+    // [NEW] Corral Settings
+    $corrals = isset($_POST['corrals']) ? $_POST['corrals'] : [];
+    $corrals_json = !empty($corrals) ? json_encode(array_values($corrals), JSON_UNESCAPED_UNICODE) : null;
+
 
     // --- 2. Validation & Security ---
     if ($event_id === 0 || empty($event_code)) {
@@ -67,6 +77,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // --- 3. Database Transaction ---
     $mysqli->begin_transaction();
     try {
+        // --- PRE-UPDATE: Fetch old bib start number for comparison ---
+        $stmt_old_bib = $mysqli->prepare("SELECT bib_start_number FROM events WHERE id = ?");
+        $stmt_old_bib->bind_param("i", $event_id);
+        $stmt_old_bib->execute();
+        $old_bib_start_number = $stmt_old_bib->get_result()->fetch_assoc()['bib_start_number'];
+        $stmt_old_bib->close();
+
         // --- PRE-UPDATE: Handle Single File Uploads ---
         function handle_single_file_upload($file_input_name, $event_code, $sub_folder) {
             if (isset($_FILES[$file_input_name]) && $_FILES[$file_input_name]['error'] === UPLOAD_ERR_OK) {
@@ -114,7 +131,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             "organizer = ?", "contact_person_name = ?", "contact_person_phone = ?",
             "payment_bank = ?", "payment_account_name = ?", "payment_account_number = ?",
             "description = ?", "awards_description = ?",
-            "map_embed_url = ?", "map_direction_url = ?"
+            "map_embed_url = ?", "map_direction_url = ?",
+            "bib_prefix = ?", "bib_start_number = ?", "bib_padding = ?", "corral_settings = ?"
         ];
         $params = [
             $name, $slogan, $start_date, $is_registration_open,
@@ -122,9 +140,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $organizer, $contact_person_name, $contact_person_phone,
             $payment_bank, $payment_account_name, $payment_account_number,
             $description, $awards_description,
-            $map_embed_url, $map_direction_url
+            $map_embed_url, $map_direction_url,
+            $bib_prefix, $bib_start_number, $bib_padding, $corrals_json
         ];
-        $types = "sssissssssssssss";
+        $types = "sssisssssssssssssiis";
 
         if ($logo_path_to_update) { $sql_set_parts[] = "organizer_logo_url = ?"; $params[] = $logo_path_to_update; $types .= "s"; }
         if ($qr_code_path_to_update) { $sql_set_parts[] = "payment_qr_code_url = ?"; $params[] = $qr_code_path_to_update; $types .= "s"; }
@@ -141,6 +160,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (!$stmt_event->execute()) throw new Exception("Failed to update event details: " . $stmt_event->error);
         $stmt_event->close();
+
+        // [NEW] Reset bib_next_number if bib_start_number was changed
+        if ($old_bib_start_number != $bib_start_number) {
+            $stmt_reset_bib = $mysqli->prepare("UPDATE events SET bib_next_number = ? WHERE id = ?");
+            $stmt_reset_bib->bind_param("ii", $bib_start_number, $event_id);
+            $stmt_reset_bib->execute();
+            $stmt_reset_bib->close();
+        }
 
         // Delete old files after DB update is successful
         if (!empty($old_paths['logo'])) @unlink('../' . $old_paths['logo']);

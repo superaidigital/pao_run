@@ -31,6 +31,7 @@ $global_settings = get_global_settings($mysqli);
                     <ul class="space-y-2">
                         <li><a href="index.php?page=home" class="text-gray-300 hover:text-primary transition">หน้าหลักกิจกรรม</a></li>
                         <li><a href="index.php?page=dashboard" class="text-gray-300 hover:text-primary transition">แดชบอร์ดผู้สมัคร</a></li>
+                        <li><a href="index.php?page=search_runner" class="text-gray-300 hover:text-primary transition">ค้นหานักวิ่ง</a></li>
                     </ul>
                 </div>
 

@@ -20,10 +20,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         SELECT 
             r.registration_code, r.title, r.first_name, r.last_name, r.status, r.bib_number, r.shirt_size, r.email, r.phone,
             e.name AS event_name, e.color_code,
-            d.name AS distance_name
+            d.name AS distance_name,
+            rc.name AS category_name
         FROM registrations r
         JOIN events e ON r.event_id = e.id
         JOIN distances d ON r.distance_id = d.id
+        LEFT JOIN race_categories rc ON r.race_category_id = rc.id
         WHERE r.thai_id = ? OR r.registration_code = ?
         LIMIT 1
     ");

@@ -28,12 +28,14 @@ if ($is_runner_logged_in) {
     // Ensure `r.id` is selected for the E-BIB link
     $stmt = $mysqli->prepare("
         SELECT 
-            r.id, r.registration_code, r.status, r.bib_number,
+            r.id, r.registration_code, r.status, r.bib_number, r.shirt_size,
             e.name AS event_name, e.event_code,
-            d.name AS distance_name
+            d.name AS distance_name,
+            rc.name AS category_name
         FROM registrations r
         JOIN events e ON r.event_id = e.id
         JOIN distances d ON r.distance_id = d.id
+        LEFT JOIN race_categories rc ON r.race_category_id = rc.id
         WHERE r.user_id = ?
         ORDER BY r.registered_at DESC
     ");
@@ -83,7 +85,12 @@ if ($is_runner_logged_in) {
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 pb-3 border-b">
                         <div>
                             <h4 class="text-xl font-bold text-gray-900"><?= e($reg['event_name']) ?></h4>
-                            <p class="text-sm text-gray-600 mt-1">ระยะทาง: <?= e($reg['distance_name']) ?> | BIB: <span class="font-mono"><?= e($reg['bib_number'] ?? 'N/A') ?></span></p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                ระยะทาง: <?= e($reg['distance_name']) ?> | 
+                                รุ่น: <?= e($reg['category_name'] ?? 'ไม่จำกัดรุ่น') ?> | 
+                                เสื้อ: <?= e($reg['shirt_size'] ?? '-') ?> | 
+                                BIB: <span class="font-mono"><?= e($reg['bib_number'] ?? 'N/A') ?></span>
+                            </p>
                         </div>
                         <span class="mt-2 md:mt-0 py-1 px-3 rounded-full text-xs font-semibold bg-<?= e($status_color) ?>-100 text-<?= e($status_color) ?>-800">
                             <?= e($reg['status']) ?>
@@ -131,7 +138,7 @@ if ($is_runner_logged_in) {
                      <h5 class="text-5xl font-extrabold my-2"><?= e($search_result['bib_number'] ?? 'XXX') ?></h5>
                      <p class="text-xl font-semibold"><?= e($search_result['title']) . e($search_result['first_name']) . ' ' . e($search_result['last_name']) ?></p>
                      <div class="flex justify-between text-sm mt-2 pt-2 border-t border-white border-opacity-30">
-                         <span>ไซส์เสื้อ: <?= e($search_result['shirt_size']) ?></span>
+                         <span>ไซส์เสื้อ: <?= e($search_result['shirt_size']) ?> | รุ่น: <?= e($search_result['category_name'] ?? 'ไม่จำกัดรุ่น') ?></span>
                          <span class="font-bold"><?= e($search_result['distance_name']) ?></span>
                      </div>
                 </div>
@@ -205,4 +212,3 @@ if ($is_runner_logged_in) {
     <?php endif; // ปิด if ($is_runner_logged_in) ?>
 
 </div>
-

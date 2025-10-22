@@ -19,7 +19,8 @@ $allowed_pages = [
     'edit_profile', 
     'forgot_password', 
     'reset_password',
-    'ebib'
+    'ebib',
+    'search_runner' // เพิ่มหน้าใหม่ที่นี่
 ];
 
 // If the requested page is not in the allowed list, default back to the home page.
@@ -52,6 +53,9 @@ switch ($page) {
         break;
     case 'ebib':
         $page_title = 'E-BIB';
+        break;
+    case 'search_runner': // เพิ่ม case สำหรับ title
+        $page_title = 'ค้นหานักวิ่ง';
         break;
     default:
         $page_title = 'หน้าหลัก';
